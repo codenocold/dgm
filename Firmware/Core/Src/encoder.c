@@ -234,7 +234,12 @@ void ENCODER_sample(float dt)
 		}
 		Encoder.cnt = cnt;
 	}else{
-		Encoder.raw = MA730_read_raw();
+		// dir swap
+		if(UsrConfig.encoder_dir_rev){
+			Encoder.raw = ENCODER_CPR - MA730_read_raw();
+		}else{
+			Encoder.raw = MA730_read_raw();
+		}
 		Encoder.cnt = Encoder.raw;
 	}
 	

@@ -34,6 +34,7 @@ void CALIBRATION_start(void)
 		p_error_arr = HEAP_malloc(SAMPLES_PER_PPAIR*MOTOR_POLE_PAIRS_MAX*4);
 	}
 	
+	UsrConfig.encoder_dir_rev = 0;
 	UsrConfig.calib_valid = false;
 	
 	mCalibStep = CS_MOTOR_R_START;
