@@ -45,10 +45,18 @@ void CAN_init(void)
     can_parameter.rec_fifo_overwrite = DISABLE;
     can_parameter.trans_fifo_order = ENABLE;
 	can_parameter.time_triggered = DISABLE;
+	
+	// Baudrate: 1M Samplepoint 75%
+	int brp = 3;
+	int sjw = 1;
+	int seg1 = 14;
+	int seg2 = 5;
+	can_parameter.prescaler = brp;
+    can_parameter.resync_jump_width = sjw - 1;
+    can_parameter.time_segment_1 = seg1 - 1;
+    can_parameter.time_segment_2 = seg2 - 1;
 
 	can_init(CAN0, &can_parameter);
-	
-	can_frequency_set(CAN0, 1000000);
 	
 	/* initialize filter */
     can1_filter_start_bank(14);
