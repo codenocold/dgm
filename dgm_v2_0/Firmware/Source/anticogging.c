@@ -18,7 +18,6 @@
 #include "systick.h"
 #include "usr_config.h"
 #include "encoder.h"
-#include "arm_math.h"
 #include "heap.h"
 #include "can.h"
 #include "util.h"
