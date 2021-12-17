@@ -105,7 +105,7 @@ uint32_t ENCODER_read_raw(void)
 	
 	data[1] >>= 2;
 	data[2] >>= 4;
-	count = data[0]<<10 | data[1]<<4 | data[0];
+	count = data[0]<<10 | data[1]<<4 | data[2];
 	
 	// NCS
 	NCS_SET();
