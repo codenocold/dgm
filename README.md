@@ -14,7 +14,7 @@
 
 #  dgm电机驱动器简介
 
-**作者：**codenocold@qq.com/codenocold@gmail.com
+**作者：** codenocold@qq.com/codenocold@gmail.com
 
 **![](./img/dgm_black_3d.jpg)**
 
