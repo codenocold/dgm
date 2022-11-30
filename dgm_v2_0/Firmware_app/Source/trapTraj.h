@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -21,20 +21,34 @@
 #include <stdbool.h>
 
 typedef struct sTraj{
-	// Step
+    // Step
 	float Y;
 	float Yd;
 	float Ydd;
-	
-	float Tf_;
-	
-	float t;
-    bool trajectory_done;
+    
+    float start_position;
+    float start_velocity;
+    float end_position;
+    
+    float acc;
+    float vel;
+    float dec;
+    
+    float acc_distance;
+    
+    float t_acc;
+    float t_vel;
+    float t_dec;
+	float t_total;
+    
+    uint32_t tick;
+    
+    bool profile_done;
 } tTraj;
 
 extern tTraj Traj;
 
-void TRAJ_plan(float Xf, float Xi, float Vi, float Vmax, float Amax, float Dmax);
-void TRAJ_eval(float t);
+void TRAJ_plan(float position, float start_position, float start_velocity, float Vmax, float Amax, float Dmax);
+void TRAJ_eval(void);
 
 #endif

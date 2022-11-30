@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -14,8 +14,8 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __MAIN_H
-#define __MAIN_H
+#ifndef __MAIN_H__
+#define __MAIN_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,23 +23,49 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "gd32c10x.h"
 
-//#define __DEBUG__
+extern volatile uint32_t SystickCount;
 
-#ifdef __DEBUG__
-	#define DEBUG(...)		printf(__VA_ARGS__);
-#else
-	#define DEBUG(...)
-#endif
+// LED ACT
+#define LED_ACT_SET()		GPIO_BOP(GPIOC) = (uint32_t)GPIO_PIN_13;
+#define LED_ACT_RESET()		GPIO_BC(GPIOC)  = (uint32_t)GPIO_PIN_13;
 
+// SPI NCS
+#define NCS_SET()		GPIO_BOP(GPIOA) = (uint32_t)GPIO_PIN_4;
+#define NCS_RESET()		GPIO_BC(GPIOA) = (uint32_t)GPIO_PIN_4;
+
+// IO
 #define IO_SET()		GPIO_BOP(GPIOA) = (uint32_t)GPIO_PIN_15
 #define IO_RESET()		GPIO_BC(GPIOA) = (uint32_t)GPIO_PIN_15
 #define IO_GET()		(GPIO_OCTL(GPIOA)&(GPIO_PIN_15))
 static inline void IO_TOGGLE(void){if(IO_GET()){IO_RESET();}else{IO_SET();}}
 
+
+/* FLASH MAP ---------------------------------------------*/
+#define PAGE_SIZE           	((uint32_t)0x400U)	// 1KB
+
+#define APP_MAIN_ADDR			((uint32_t)(0x8000000 +  0 * PAGE_SIZE))		// Page 0
+#define APP_BACK_ADDR			((uint32_t)(0x8000000 + 50 * PAGE_SIZE))		// Page 50
+#define	APP_MAX_SIZE			((uint32_t)(50 * PAGE_SIZE))					// 50KB
+
+#define BOOTLOADER_ADDR			((uint32_t)(0x8000000 + 100 * PAGE_SIZE))		// Page 100
+#define BOOTLOADER_MAX_SIZE		((uint32_t)(10 * PAGE_SIZE))					// 10KB
+
+#define USR_CONFIG_ADDR			((uint32_t)(0x8000000 + 110 * PAGE_SIZE))		// Page 110
+#define USR_CONFIG_MAX_SIZE		((uint32_t)(5 * PAGE_SIZE))					    // 5KB
+
+#define COGGING_MAP_ADDR		((uint32_t)(0x8000000 + 115 * PAGE_SIZE))		// Page 115
+#define COGGING_MAP_MAX_SIZE	((uint32_t)(10 * PAGE_SIZE))					// 10KB
+
+
 /* Exported functions prototypes ---------------------------------------------*/
+static inline void watch_dog_feed(void)					{ FWDGT_CTL = FWDGT_KEY_RELOAD; }
+static inline uint32_t get_ms_since(uint32_t tick)		{ return (uint32_t)((SystickCount - tick) / 2U); }
+
 void Error_Handler(void);
+void delay_ms(const uint16_t ms);
 
 #ifdef __cplusplus
 }

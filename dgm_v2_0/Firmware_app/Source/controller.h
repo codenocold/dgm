@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -19,18 +19,40 @@
 
 #include "main.h"
 
-typedef struct {
+typedef enum {
+	CONTROL_MODE_TORQUE_RAMP		= 0,
+	CONTROL_MODE_VELOCITY_RAMP		= 1,
+	CONTROL_MODE_POSITION_FILTER	= 2,
+    CONTROL_MODE_POSITION_PROFILE   = 3,
+} tControlMode;
+
+typedef struct sController{
 	float input_position;
 	float input_velocity;
-	float input_current;
-} ControllerStruct;
+	float input_torque;
+	
+	float input_position_buffer;
+	float input_velocity_buffer;
+	float input_torque_buffer;
+	
+	float pos_setpoint;
+	float vel_setpoint;
+	float torque_setpoint;
 
-extern ControllerStruct Controller;
+	bool input_updated;
+	float input_pos_filter_kp;
+	float input_pos_filter_ki;
+	float vel_integrator_torque;
+} tController;
 
-void CONTROLLER_move_to_pos(float goal_point);
+extern tController Controller;
 
-float CONTROLLER_get_integrator_current(void);
-void CONTROLLER_reset(ControllerStruct *controller);
-float CONTROLLER_loop(ControllerStruct *controller, int control_mode, float velocity, float position);
+int CONTROLLER_set_home(void);
+void CONTROLLER_sync_callback(void);
+
+void CONTROLLER_init(void);
+void CONTROLLER_update_input_pos_filter_gain(float bw);
+void CONTROLLER_reset(void);
+void CONTROLLER_loop(void);
 
 #endif

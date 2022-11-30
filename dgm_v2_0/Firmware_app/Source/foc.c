@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -17,142 +17,167 @@
 #include "foc.h"
 #include <math.h>
 #include "util.h"
-#include "systick.h"
-#include "util.h"
 #include "usr_config.h"
-#include "pwm_curr_fdbk.h"
+#include "pwm_curr.h"
 
-FOCStruct Foc;
+tFOC Foc;
 
-void FOC_zero_current(FOCStruct *foc)
+void FOC_init(void)
 {
-    int adc_sum_a = 0;
-    int adc_sum_b = 0;
-	int adc_sum_c = 0;
-    int n = 1000;
-    for (int i = 0; i<n; i++){	// Average n samples of the ADC
-        SYSTICK_delay_us(60);
-        adc_sum_a += foc->adc_phase_a;
-        adc_sum_b += foc->adc_phase_b;
-		adc_sum_c += foc->adc_phase_c;
-    }
-    foc->adc_phase_a_offset = adc_sum_a/n;
-    foc->adc_phase_b_offset = adc_sum_b/n;
-	foc->adc_phase_c_offset = adc_sum_c/n;
+    Foc.v_bus = 0;
+    Foc.v_bus_filt = 0;
+    Foc.i_q = 0;
+	Foc.i_q_filt = 0;
+    Foc.i_bus = 0;
+	Foc.i_bus_filt = 0;
+    Foc.power_filt = 0;
+    
+	Foc.is_armed = false;
+	FOC_update_current_ctrl_gain(UsrConfig.current_ctrl_bw);
 }
 
-void FOC_update_current_gain(void)
+void FOC_update_current_ctrl_gain(float bw)
 {
-	UsrConfig.current_ctrl_p_gain = UsrConfig.motor_phase_inductance * UsrConfig.current_ctrl_bandwidth;
-	UsrConfig.current_ctrl_i_gain = UsrConfig.motor_phase_resistance * UsrConfig.current_ctrl_bandwidth;
+	float bandwidth = MIN(bw, 0.25f * PWM_FREQUENCY);
+	Foc.current_ctrl_p_gain = UsrConfig.motor_phase_inductance * bandwidth;
+	Foc.current_ctrl_i_gain = UsrConfig.motor_phase_resistance * bandwidth;
 }
 
 void FOC_arm(void)
 {
-	uint32_t prim = cpu_enter_critical();
+	if(Foc.is_armed){
+		return;
+	}
 	
-	PWMC_switch_on_pwm();
+	__disable_irq();
 	
-	cpu_exit_critical(prim);
+    Foc.i_q = 0;
+	Foc.i_q_filt = 0;
+    Foc.i_bus = 0;
+	Foc.i_bus_filt = 0;
+    Foc.power_filt = 0;
+    
+    Foc.current_ctrl_integral_d = 0;
+    Foc.current_ctrl_integral_q = 0;
+	
+	PWMC_TurnOnLowSides();
+	
+	Foc.is_armed = true;
+	
+	__enable_irq();
 }
 
 void FOC_disarm(void)
 {
-	uint32_t prim = cpu_enter_critical();
+	if(!Foc.is_armed){
+		return;
+	}
 	
-	PWMC_switch_off_pwm();
+	__disable_irq();
 	
-	cpu_exit_critical(prim);
+    Foc.i_q = 0;
+	Foc.i_q_filt = 0;
+    Foc.i_bus = 0;
+	Foc.i_bus_filt = 0;
+    Foc.power_filt = 0;
+	
+	PWMC_SwitchOffPWM();
+	
+	Foc.is_armed = false;
+	
+	__enable_irq();
 }
 
-void FOC_reset(FOCStruct *foc)
+void FOC_voltage(float Vd_set, float Vq_set, float phase)
 {
-	foc->i_d_filt = 0;
-	foc->i_q_filt = 0;
-    foc->current_ctrl_integral_d = 0;
-    foc->current_ctrl_integral_q = 0;
-}
-
-void apply_voltage_timings(float vbus, float v_d, float v_q, float pwm_phase)
-{
-	// Modulation
-    float V_to_mod = 1.0f / ((2.0f / 3.0f) * vbus);
-    float mod_d = V_to_mod * v_d;
-    float mod_q = V_to_mod * v_q;
-	
-	// Vector modulation saturation, lock integrator if saturated
-    float mod_scalefactor = 0.80f * SQRT3_BY_2 * 1.0f / sqrtf(mod_d * mod_d + mod_q * mod_q);
-    if (mod_scalefactor < 1.0f) {
-        mod_d *= mod_scalefactor;
-        mod_q *= mod_scalefactor;
-    }
-	
-	// Inverse park transform
-	float mod_alpha;
-    float mod_beta;
-	inverse_park(mod_d, mod_q, pwm_phase, &mod_alpha, &mod_beta);
-
-	// SVM
-	svm(mod_alpha, mod_beta, &Foc.dtc_a, &Foc.dtc_b, &Foc.dtc_c);
-
-	// Apply duty
-	TIMER_CH0CV(TIMER0) = (uint16_t)(Foc.dtc_a * (float)PWM_ARR);
-	TIMER_CH1CV(TIMER0) = (uint16_t)(Foc.dtc_b * (float)PWM_ARR);
-	TIMER_CH2CV(TIMER0) = (uint16_t)(Foc.dtc_c * (float)PWM_ARR);
-}
-
-void FOC_current(FOCStruct *foc, float Id_des, float Iq_des, float I_phase, float pwm_phase)
-{
-	// Clarke transform
+    // Clarke transform
 	float i_alpha, i_beta;
-	clarke_transform(foc->i_a, foc->i_b, foc->i_c, &i_alpha, &i_beta);
+	clarke_transform(Foc.i_a, Foc.i_b, Foc.i_c, &i_alpha, &i_beta);
 	
 	// Park transform
 	float i_d, i_q;
-	park_transform(i_alpha, i_beta, I_phase, &i_d, &i_q);
-	
-	// Current Filter used for report
-	foc->i_d_filt = 0.95f*foc->i_d_filt + 0.05f*i_d;
-	foc->i_q_filt = 0.95f*foc->i_q_filt + 0.05f*i_q;
-	
-	// Apply PI control
-	float Ierr_d = Id_des - i_d;
-	float Ierr_q = Iq_des - i_q;
-	float v_d = UsrConfig.current_ctrl_p_gain * Ierr_d + foc->current_ctrl_integral_d;
-	float v_q = UsrConfig.current_ctrl_p_gain * Ierr_q + foc->current_ctrl_integral_q;
-	
+	park_transform(i_alpha, i_beta, phase, &i_d, &i_q);
+    
+    // Used for report
+    Foc.i_q = i_q;
+	UTILS_LP_FAST(Foc.i_q_filt, Foc.i_q, 0.01f);
+    Foc.i_d = i_d;
+	UTILS_LP_FAST(Foc.i_d_filt, Foc.i_d, 0.01f);
+    
 	// Modulation
-	float mod_to_V = (2.0f / 3.0f) * foc->v_bus;
-    float V_to_mod = 1.0f / mod_to_V;
-    float mod_d = V_to_mod * v_d;
-    float mod_q = V_to_mod * v_q;
+    float V_to_mod = 1.0f / (Foc.v_bus_filt * 2.0f / 3.0f);
+    float mod_d = V_to_mod * Vd_set;
+    float mod_q = V_to_mod * Vq_set;
 	
 	// Vector modulation saturation, lock integrator if saturated
-    float mod_scalefactor = 0.8f * SQRT3_BY_2 * 1.0f / sqrtf(mod_d * mod_d + mod_q * mod_q);
+    float mod_scalefactor = 0.9f * SQRT3_BY_2 / sqrtf(SQ(mod_d) + SQ(mod_q));
     if (mod_scalefactor < 1.0f) {
         mod_d *= mod_scalefactor;
         mod_q *= mod_scalefactor;
-        foc->current_ctrl_integral_d *= 0.99f;
-        foc->current_ctrl_integral_q *= 0.99f;
-    } else {
-        foc->current_ctrl_integral_d += Ierr_d * (UsrConfig.current_ctrl_i_gain * DT);
-        foc->current_ctrl_integral_q += Ierr_q * (UsrConfig.current_ctrl_i_gain * DT);
     }
-	
-	// Compute estimated bus current
-    foc->i_bus_filt = mod_d * foc->i_d_filt + mod_q * foc->i_q_filt;
 	
 	// Inverse park transform
 	float mod_alpha;
     float mod_beta;
-	inverse_park(mod_d, mod_q, pwm_phase, &mod_alpha, &mod_beta);
+	inverse_park(mod_d, mod_q, phase, &mod_alpha, &mod_beta);
 
 	// SVM
-	float dtc_a, dtc_b, dtc_c;
-	svm(mod_alpha, mod_beta, &dtc_a, &dtc_b, &dtc_c);
+	if(0 == svm(mod_alpha, mod_beta, &Foc.dtc_a, &Foc.dtc_b, &Foc.dtc_c)){
+		set_a_duty((uint16_t)(Foc.dtc_a * (float)HALF_PWM_PERIOD_CYCLES));
+		set_b_duty((uint16_t)(Foc.dtc_b * (float)HALF_PWM_PERIOD_CYCLES));
+		set_c_duty((uint16_t)(Foc.dtc_c * (float)HALF_PWM_PERIOD_CYCLES));
+	}
+}
 
-	// Apply duty
-	TIMER_CH0CV(TIMER0) = (uint16_t)(dtc_a * (float)PWM_ARR);
-	TIMER_CH1CV(TIMER0) = (uint16_t)(dtc_b * (float)PWM_ARR);
-	TIMER_CH2CV(TIMER0) = (uint16_t)(dtc_c * (float)PWM_ARR);
+void FOC_current(float Id_set, float Iq_set, float phase, float phase_vel)
+{
+	// Clarke transform
+	float i_alpha, i_beta;
+	clarke_transform(Foc.i_a, Foc.i_b, Foc.i_c, &i_alpha, &i_beta);
+	
+	// Park transform
+	float i_d, i_q;
+	park_transform(i_alpha, i_beta, phase, &i_d, &i_q);
+	
+	float mod_to_V = Foc.v_bus_filt * 2.0f / 3.0f;
+    float V_to_mod = 1.0f / mod_to_V;
+	
+	// Apply PI control
+	float Ierr_d = Id_set - i_d;
+	float Ierr_q = Iq_set - i_q;
+	float mod_d = V_to_mod * (Foc.current_ctrl_integral_d + Ierr_d * Foc.current_ctrl_p_gain);
+	float mod_q = V_to_mod * (Foc.current_ctrl_integral_q + Ierr_q * Foc.current_ctrl_p_gain);
+
+	// Vector modulation saturation, lock integrator if saturated
+	float mod_scalefactor = 0.9f * SQRT3_BY_2 / sqrtf(SQ(mod_d) + SQ(mod_q));
+	if (mod_scalefactor < 1.0f) {
+		mod_d *= mod_scalefactor;
+		mod_q *= mod_scalefactor;
+		Foc.current_ctrl_integral_d *= 0.99f;
+		Foc.current_ctrl_integral_q *= 0.99f;
+	} else {
+		Foc.current_ctrl_integral_d += Ierr_d * (Foc.current_ctrl_i_gain * CURRENT_MEASURE_PERIOD);
+		Foc.current_ctrl_integral_q += Ierr_q * (Foc.current_ctrl_i_gain * CURRENT_MEASURE_PERIOD);
+	}
+
+	// Inverse park transform
+	float mod_alpha, mod_beta;
+    float pwm_phase = phase + phase_vel * CURRENT_MEASURE_PERIOD;
+	inverse_park(mod_d, mod_q, pwm_phase, &mod_alpha, &mod_beta);
+	
+	// Used for report
+    Foc.i_q = i_q;
+	UTILS_LP_FAST(Foc.i_q_filt, Foc.i_q, 0.01f);
+    Foc.i_d = i_d;
+	UTILS_LP_FAST(Foc.i_d_filt, Foc.i_d, 0.01f);
+    Foc.i_bus = (mod_d * i_d + mod_q * i_q);
+	UTILS_LP_FAST(Foc.i_bus_filt, Foc.i_bus, 0.01f);
+	Foc.power_filt = Foc.v_bus_filt * Foc.i_bus_filt;
+
+	// SVM
+	if(0 == svm(mod_alpha, mod_beta, &Foc.dtc_a, &Foc.dtc_b, &Foc.dtc_c)){
+		set_a_duty((uint16_t)(Foc.dtc_a * (float)HALF_PWM_PERIOD_CYCLES));
+		set_b_duty((uint16_t)(Foc.dtc_b * (float)HALF_PWM_PERIOD_CYCLES));
+		set_c_duty((uint16_t)(Foc.dtc_c * (float)HALF_PWM_PERIOD_CYCLES));
+	}
 }

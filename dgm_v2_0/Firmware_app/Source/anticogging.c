@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -15,138 +15,105 @@
 */
 
 #include "anticogging.h"
-#include "systick.h"
 #include "usr_config.h"
-#include "encoder.h"
+#include "controller.h"
+#include "pwm_curr.h"
+#include "mc_task.h"
+#include "util.h"
 #include "heap.h"
 #include "can.h"
-#include "util.h"
-#include "fsm.h"
-
-typedef enum eAntiCoggingStep{
-	AS_NULL = 0,
-	AS_START,
-	AS_FORWARD_LOOP,
-	AS_BACKWARD_LOOP,
-	AS_END,
-}tAntiCoggingStep;
+#include "foc.h"
 
 bool AnticoggingValid = false;
 
-static tAntiCoggingStep AntiCoggingStep = AS_NULL;
+static int mNumber;
+static int mLoopCount;
 
 void ANTICOGGING_start(void)
 {
+    mNumber = 0;
+	mLoopCount = 0;
 	AnticoggingValid = false;
 	USR_CONFIG_set_default_cogging_map();
-	AntiCoggingStep = AS_START;
 }
 
 void ANTICOGGING_end(void)
 {
-	AntiCoggingStep = AS_NULL;
-	
+    FOC_disarm();
+    
 	if(!AnticoggingValid){
 		USR_CONFIG_set_default_cogging_map();
 	}
 }
 
-void ANTICOGGING_loop(ControllerStruct *controller)
+void ANTICOGGING_loop(void)
 {
-	static int index = 0;
-	static uint32_t tick = 0;
+	static const int gap_number = 100;
 	
-	if(AntiCoggingStep == AS_NULL){
-		return;
-	}
+    // loop contrl 0.025s
+    if(++mLoopCount < 500){
+        return;
+    }
+    mLoopCount = 0;
+    
+	mNumber ++;
 	
-	switch(AntiCoggingStep){
-		case AS_START:
-			{
-				// 500 Hz
-				if(SYSTICK_get_ms_since(tick) < 2){
-					return;
-				}
-				tick = SYSTICK_get_tick();
-	
-				float position = Encoder.pos_estimate_;
-				float err = position - (int)position;
-				if(err > 0.001f){
-					controller->input_position -= 0.001f;
-				}else if(err < -0.001f){
-					controller->input_position += 0.001f;
-				}else{
-					controller->input_position -= err;
-					index = 0;
-					AntiCoggingStep = AS_FORWARD_LOOP;
-				}
-			}
-			break;
+	if(mNumber <= gap_number){
+		// CW
+		const float delta = (1.0f / (float)COGGING_MAP_NUM);
+		float pos_ref = Controller.input_position + delta;
+	    if(pos_ref > 1.0f){
+	        pos_ref -= 1.0f;
+	    }
+		Controller.input_position = pos_ref;
+	}else if(mNumber <= (gap_number + COGGING_MAP_NUM)){
+		float torque = Foc.i_q_filt * UsrConfig.torque_constant;
+		int16_t tmp = (int16_t)(torque * 5000.0f);
+		int16_t index = nearbyintf(COGGING_MAP_NUM * Controller.input_position);
+		if(index >= COGGING_MAP_NUM){
+			index = 0;
+		}
+		pCoggingMap->map[index] = tmp;
 		
-		case AS_FORWARD_LOOP:
-			{
-				// 10 Hz
-				if(SYSTICK_get_ms_since(tick) < 100){
-					return;
-				}
-				tick = SYSTICK_get_tick();
-	
-				float pos_err = controller->input_position - Encoder.pos_estimate_;
-				if(fabs(pos_err) < UsrConfig.anticogging_pos_threshold && fabs(Encoder.vel_estimate_) < UsrConfig.anticogging_vel_threshold){
-					pCoggingMap->map[index] = CONTROLLER_get_integrator_current();
-					DEBUG("F %d %f\n\r", index, pCoggingMap->map[index]);
-					
-					uint8_t data[4];
-					float_to_data(pCoggingMap->map[index], data);
-					CAN_report_anticogging(index, data);
-					
-					controller->input_position += (1.0f / COGGING_MAP_NUM);
-					index ++;
-					if(index >= COGGING_MAP_NUM){
-						index --;
-						controller->input_position -= (1.0f / COGGING_MAP_NUM);
-						AntiCoggingStep = AS_BACKWARD_LOOP;
-					}
-				}
-			}
-			break;
-			
-		case AS_BACKWARD_LOOP:
-			{
-				// 10 Hz
-				if(SYSTICK_get_ms_since(tick) < 100){
-					return;
-				}
-				tick = SYSTICK_get_tick();
-				
-				float pos_err = controller->input_position - Encoder.pos_estimate_;
-				if(fabs(pos_err) < UsrConfig.anticogging_pos_threshold && fabs(Encoder.vel_estimate_) < UsrConfig.anticogging_vel_threshold){
-					pCoggingMap->map[index] += CONTROLLER_get_integrator_current();
-					DEBUG("B %d %f\n\r", index, pCoggingMap->map[index]);
-				
-					uint8_t data[4];
-					float_to_data(pCoggingMap->map[index], data);
-					CAN_report_anticogging(index+10000, data);
-					
-					controller->input_position -= (1.0f / COGGING_MAP_NUM);
-					index --;
-					if(index < 0){
-						AntiCoggingStep = AS_END;
-					}
-				}
-			}
-			break;
+		CAN_anticogging_report(index + 1, pCoggingMap->map[index]);
 		
-		case AS_END:
-			for(index=0; index<COGGING_MAP_NUM; index++){
-				pCoggingMap->map[index] /= 2.0f;
-			}
-			AnticoggingValid = true;
-			AntiCoggingStep = AS_NULL;
-			FSM_input(CMD_MENU);
-			break;
+		// CW
+		const float delta = (1.0f / (float)COGGING_MAP_NUM);
+		float pos_ref = Controller.input_position + delta;
+	    if(pos_ref > 1.0f){
+	        pos_ref -= 1.0f;
+	    }
+		Controller.input_position = pos_ref;
+	}else if(mNumber <= (gap_number + COGGING_MAP_NUM + gap_number)){
+		// CCW
+		const float delta = -(1.0f / (float)COGGING_MAP_NUM);
+		float pos_ref = Controller.input_position + delta;
+		if(pos_ref < 0.0f){
+			pos_ref += 1.0f;
+		}
+		Controller.input_position = pos_ref;
+	}else if(mNumber <= (gap_number + COGGING_MAP_NUM + gap_number + COGGING_MAP_NUM)){
+		float torque = Foc.i_q_filt * UsrConfig.torque_constant;
+		int16_t tmp = (int16_t)(torque * 5000.0f);
+		int16_t index = nearbyintf(COGGING_MAP_NUM * Controller.input_position);
+		if(index >= COGGING_MAP_NUM){
+			index = 0;
+		}
+		pCoggingMap->map[index] = (pCoggingMap->map[index] + tmp) / 2;
 		
-		default:
-			break;
+		CAN_anticogging_report(COGGING_MAP_NUM + index + 1, tmp);
+		
+		// CCW
+		const float delta = -(1.0f / (float)COGGING_MAP_NUM);
+		float pos_ref = Controller.input_position + delta;
+		if(pos_ref < 0.0f){
+			pos_ref += 1.0f;
+		}
+		Controller.input_position = pos_ref;
+	}else{
+		// End
+		CAN_anticogging_report(0, 0);
+        AnticoggingValid = true;
+        MCT_set_state(IDLE);
 	}
 }

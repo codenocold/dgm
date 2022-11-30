@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -14,33 +14,14 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __LED_H__
-#define __LED_H__
+#ifndef __DFU_H__
+#define __DFU_H__
 
 #include "main.h"
 
-void LED_init(void);
-
-static inline void LED_set(uint32_t state){
-	if(state){
-		GPIO_BOP(GPIOC) = (uint32_t)GPIO_PIN_13;
-	}else{
-		GPIO_BC(GPIOC) = (uint32_t)GPIO_PIN_13;
-	}
-}
-
-static inline uint32_t LED_get(void){
-	return (GPIO_OCTL(GPIOC)&(GPIO_PIN_13));
-}
-
-static inline void LED_toggle(void){
-	if(LED_get()){
-		LED_set(0);
-	}else{
-		LED_set(1);
-	}
-}
-
-void LED_loop(void);
+int DFU_write_app_back_start(void);
+int DFU_write_app_back(uint8_t *data, uint8_t num);
+int DFU_check_app_back(uint32_t size, uint32_t crc);
+void DFU_jump_bootloader(void);
 
 #endif

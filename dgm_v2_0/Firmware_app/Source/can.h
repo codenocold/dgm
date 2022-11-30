@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -18,99 +18,74 @@
 #define __CAN_H__
 
 #include "main.h"
-#include <stdbool.h>
+#include "mc_task.h"
+
+// nodeID | CMD
+// 5 bit  | 6 bit
+#define NODE_ID_BIT     0x7C0U
+#define CMD_BIT         0x03FU
 
 typedef enum eCanCmd{
 	CAN_CMD_MOTOR_DISABLE = 0,
 	CAN_CMD_MOTOR_ENABLE,
 	
-	CAN_CMD_ERROR_REPORT,
+    CAN_CMD_SET_TORQUE,
+	CAN_CMD_SET_VELOCITY,
+	CAN_CMD_SET_POSITION,
+    CAN_CMD_SYNC,
+
+	CAN_CMD_CALIB_START,
+	CAN_CMD_CALIB_REPORT,
+	CAN_CMD_CALIB_ABORT,
+    
+    CAN_CMD_ANTICOGGING_START,
+    CAN_CMD_ANTICOGGING_REPORT,
+    CAN_CMD_ANTICOGGING_ABORT,
+
+    CAN_CMD_SET_HOME,
 	CAN_CMD_ERROR_RESET,
-	
-	CAN_CMD_GET_STAT,
-	
-	CAN_CMD_CALIBRATION_START,
-	CAN_CMD_CALIBRATION_REPORT,
-	CAN_CMD_CALIBRATION_ABORT,
-	
-	CAN_CMD_ANTICOGGING_START,
-	CAN_CMD_ANTICOGGING_REPORT,
-	CAN_CMD_ANTICOGGING_ABORT,
-	
-	CAN_CMD_SYNC,
-	
-	CAN_CMD_SET_TARGET_POSITION,
-	CAN_CMD_SET_TARGET_VELOCITY,
-	CAN_CMD_SET_TARGET_CURRENT,
-	
-	CAN_CMD_GET_POSITION,
+	CAN_CMD_GET_STATUSWORD,
+    CAN_CMD_STATUSWORD_REPORT,
+    
+    CAN_CMD_GET_TORQUE,
 	CAN_CMD_GET_VELOCITY,
-	CAN_CMD_GET_CURRENT,
+	CAN_CMD_GET_POSITION,
+	CAN_CMD_GET_I_Q,
 	CAN_CMD_GET_VBUS,
 	CAN_CMD_GET_IBUS,
-	
-	CAN_CMD_SET_CONFIG,
+	CAN_CMD_GET_POWER,
+    
+    CAN_CMD_SET_CONFIG,
 	CAN_CMD_GET_CONFIG,
-	CAN_CMD_UPDATE_CONFIGS,
-	CAN_CMD_RESET_ALL_CONFIGS,
-	
-	CAN_CMD_GET_FW_VERSION,
-	
-	CAN_CMD_HEARTBEAT,
+	CAN_CMD_SAVE_ALL_CONFIG,
+	CAN_CMD_RESET_ALL_CONFIG,
+
+	CAN_CMD_GET_FW_VERSION = 50,
+    CAN_CMD_WRITE_APP_BACK_START,
+	CAN_CMD_WRITE_APP_BACK,
+	CAN_CMD_CHECK_APP_BACK,
+    CAN_CMD_DFU_START,
+
+    CAN_CMD_HEARTBEAT = 63,
 }tCanCmd;
 
-typedef enum eCanConfigs{
-	CAN_CONFIG_MOTOR_POLE_PAIRS = 1,
-	CAN_CONFIG_MOTOR_PHASE_RESISTANCE,
-	CAN_CONFIG_MOTOR_PHASE_INDUCTANCE,
-	CAN_CONFIG_INERTIA,
-	
-	CAN_CONFIG_CALIB_VALID,
-	CAN_CONFIG_CALIB_CURRENT,
-	CAN_CONFIG_CALIB_MAX_VOLTAGE,
-	
-	CAN_CONFIG_ANTICOGGING_ENABLE,
-	CAN_CONFIG_ANTICOGGING_POS_THRESHOLD,
-	CAN_CONFIG_ANTICOGGING_VEL_THRESHOLD,
-	
-	CAN_CONFIG_CONTROL_MODE,
-	CAN_CONFIG_CURRENT_RAMP_RATE,
-	CAN_CONFIG_VEL_RAMP_RATE,
-	CAN_CONFIG_TRAJ_VEL,
-	CAN_CONFIG_TRAJ_ACCEL,
-	CAN_CONFIG_TRAJ_DECEL,
-	CAN_CONFIG_POS_GAIN,
-	CAN_CONFIG_VEL_GAIN,
-	CAN_CONFIG_VEL_INTEGRATOR_GAIN,
-	CAN_CONFIG_VEL_LIMIT,
-	CAN_CONFIG_CURRENT_LIMIT,
-	CAN_CONFIG_CURRENT_CTRL_P_GAIN,
-	CAN_CONFIG_CURRENT_CTRL_I_GAIN,
-	CAN_CONFIG_CURRENT_CTRL_BW,
-	
-	CAN_CONFIG_PROTECT_UNDER_VOLTAGE,
-	CAN_CONFIG_PROTECT_OVER_VOLTAGE,
-	CAN_CONFIG_PROTECT_OVER_SPEED,
-	
-	CAN_CONFIG_CAN_ID,
-	CAN_CONFIG_CAN_TIMEOUT_MS,
-	CAN_CONFIG_CAN_SYNC_TARGET_ENABLE,
-} tCanConfigs;
-
 typedef struct {
-	uint32_t can_id;
-	uint8_t can_dlc;
-	uint8_t data[8];
+	uint32_t id:24;
+	uint32_t dlc:8;
+	uint8_t  data[8];
 } CanFrame;
 
-void CAN_init(void);
-bool can_send(uint32_t frameID, uint8_t* pData, uint8_t len);
-bool CAN_receive(CanFrame *rx_frame);
-void CAN_report_error(int32_t ecode);
-void CAN_report_calibration(int step, uint8_t* data);
-void CAN_report_anticogging(int step, uint8_t* data);
-void CAN_reset_timeout(void);
-void CAN_timeout_check_loop(void);
-void CAN_rx_callback(CanFrame* rx_frame);
+void CAN_set_node_id(uint8_t nodeID);
+void CAN_comm_loop(void);
+void CAN_reset_rx_timeout(void);
+void CAN_reset_tx_timeout(void);
+
+void CAN_receive_callback(void);
+
+void CAN_tx_statusword(tMCStatusword statusword);
+
+// only used in one NVIC
+void CAN_calib_report(int32_t step, uint8_t *data);
+void CAN_anticogging_report(int32_t step, int32_t value);
 
 #endif /* __CAN_H__ */

@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -19,34 +19,47 @@
 
 #include "main.h"
 
-#define ENCODER_CPR			 262144
-#define ENCODER_CPR_DIV_2	(ENCODER_CPR>>1)
+#define ENCODER_CPR			(int)262144
+#define ENCODER_CPR_F		(262144.0f)
+#define ENCODER_CPR_DIV		(ENCODER_CPR>>1)
+
+typedef struct sMT6825 {
+	bool no_mag;
+	bool over_speed;
+	uint32_t angle;
+	
+	uint8_t rx_err_count;
+	uint8_t check_err_count;
+} tMT6825;
 
 typedef struct sEncoder {
 	int raw;
-	int cnt;
-	int pos_abs_;
-	int count_in_cpr_;
-	int shadow_count_;
-	float pos_estimate_counts_;
-	float vel_estimate_counts_;
-	float pos_cpr_counts_;
+	int count_in_cpr;
+	int count_in_cpr_prev;
 	
-	float pos_estimate_;
-    float vel_estimate_;
-	float pos_cpr_;
+	int64_t shadow_count;
 	
-	float phase_;
-	float interpolation_;
-
-	float pll_kp_;
-	float pll_ki_;
+	// pll use
+	float pos_cpr_counts;
+	float vel_estimate_counts;
+	
+	float pos;
+	float vel;
+	
+	float phase;
+	float phase_vel;
+	
+	float pll_kp;
+	float pll_ki;
+	float interpolation;
+	float snap_threshold;
 } tEncoder;
 
+extern tMT6825 MT6825;
 extern tEncoder Encoder;
 
 void ENCODER_init(void);
-uint32_t ENCODER_read_raw(void);
-void ENCODER_sample(void);
+bool ENCODER_sample(void);
+void ENCODER_loop(void);
 
 #endif

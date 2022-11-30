@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -19,12 +19,11 @@
 
 #include "main.h"
 #include <stdbool.h>
-#include "controller.h"
 
 extern bool AnticoggingValid;
 
 void ANTICOGGING_start(void);
 void ANTICOGGING_end(void);
-void ANTICOGGING_loop(ControllerStruct *controller);
+void ANTICOGGING_loop(void);
 
 #endif

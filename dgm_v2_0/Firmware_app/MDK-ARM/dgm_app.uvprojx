@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>dgm</TargetName>
+      <TargetName>dgm_app</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
@@ -16,8 +16,8 @@
         <TargetCommonOption>
           <Device>GD32C103CB</Device>
           <Vendor>GigaDevice</Vendor>
-          <PackID>GigaDevice.GD32C10x_DFP.1.0.0</PackID>
-          <PackURL>http://gd32mcu.com/data/documents/pack/</PackURL>
+          <PackID>GigaDevice.GD32C10x_DFP.1.0.1</PackID>
+          <PackURL>https://gd32mcu.com/data/documents/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x08000) IROM(0x08000000,0x020000) CPUTYPE("Cortex-M4") FPU2 CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -49,7 +49,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\object\</OutputDirectory>
-          <OutputName>dgm_fw</OutputName>
+          <OutputName>dgm_app_fw</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -80,9 +80,9 @@
             <nStopB2X>0</nStopB2X>
           </BeforeMake>
           <AfterMake>
-            <RunUserProg1>0</RunUserProg1>
+            <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
+            <UserProg1Name>"$K\ARM\ARMCC\bin\fromelf.exe" --bincombined "!L" --output="$L\@L.bin"</UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
@@ -326,7 +326,7 @@
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
-            <uGnu>0</uGnu>
+            <uGnu>1</uGnu>
             <useXO>0</useXO>
             <v6Lang>3</v6Lang>
             <v6LangP>3</v6LangP>
@@ -394,34 +394,9 @@
               <FilePath>..\Source\gd32c10x_it.c</FilePath>
             </File>
             <File>
-              <FileName>led.c</FileName>
+              <FileName>pwm_curr.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Source\led.c</FilePath>
-            </File>
-            <File>
-              <FileName>uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Source\uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>can.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Source\can.c</FilePath>
-            </File>
-            <File>
-              <FileName>systick.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Source\systick.c</FilePath>
-            </File>
-            <File>
-              <FileName>pwm_curr_fdbk.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Source\pwm_curr_fdbk.c</FilePath>
-            </File>
-            <File>
-              <FileName>encoder.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Source\encoder.c</FilePath>
+              <FilePath>..\Source\pwm_curr.c</FilePath>
             </File>
             <File>
               <FileName>controller.c</FileName>
@@ -429,14 +404,65 @@
               <FilePath>..\Source\controller.c</FilePath>
             </File>
             <File>
-              <FileName>foc.c</FileName>
+              <FileName>encoder.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Source\foc.c</FilePath>
+              <FilePath>..\Source\encoder.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>2</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                  <ComprImg>1</ComprImg>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>1</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <uC99>2</uC99>
+                    <uGnu>2</uGnu>
+                    <useXO>2</useXO>
+                    <v6Lang>0</v6Lang>
+                    <v6LangP>0</v6LangP>
+                    <vShortEn>2</vShortEn>
+                    <vShortWch>2</vShortWch>
+                    <v6Lto>2</v6Lto>
+                    <v6WtE>2</v6WtE>
+                    <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </Cads>
+                </FileArmAds>
+              </FileOption>
             </File>
             <File>
-              <FileName>fsm.c</FileName>
+              <FileName>mc_task.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Source\fsm.c</FilePath>
+              <FilePath>..\Source\mc_task.c</FilePath>
             </File>
             <File>
               <FileName>trapTraj.c</FileName>
@@ -454,9 +480,24 @@
               <FilePath>..\Source\anticogging.c</FilePath>
             </File>
             <File>
-              <FileName>usr_config.c</FileName>
+              <FileName>heap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Source\usr_config.c</FilePath>
+              <FilePath>..\Source\heap.c</FilePath>
+            </File>
+            <File>
+              <FileName>foc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\foc.c</FilePath>
+            </File>
+            <File>
+              <FileName>can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\can.c</FilePath>
+            </File>
+            <File>
+              <FileName>dfu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\dfu.c</FilePath>
             </File>
             <File>
               <FileName>util.c</FileName>
@@ -464,9 +505,9 @@
               <FilePath>..\Source\util.c</FilePath>
             </File>
             <File>
-              <FileName>heap.c</FileName>
+              <FileName>usr_config.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Source\heap.c</FilePath>
+              <FilePath>..\Source\usr_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -547,6 +588,11 @@
               <FileName>gd32c10x_adc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\GD32C10x_standard_peripheral\Source\gd32c10x_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>gd32c10x_bkp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\GD32C10x_standard_peripheral\Source\gd32c10x_bkp.c</FilePath>
             </File>
           </Files>
         </Group>

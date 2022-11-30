@@ -1,5 +1,5 @@
 /*
-	Copyright 2021 codenocold 1107795287@qq.com
+	Copyright 2021 codenocold codenocold@qq.com
 	Address : https://github.com/codenocold/dgm
 	This file is part of the dgm firmware.
 	The dgm firmware is free software: you can redistribute it and/or modify
@@ -14,81 +14,80 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#ifndef __USR_CONFIG_H__
+#define __USR_CONFIG_H__
 
 #include "main.h"
-#include <stdbool.h>
 
-#define FW_VERSION_MAJOR	2
+#define FW_VERSION_MAJOR	3
 #define FW_VERSION_MINOR	1
 
-#define OFFSET_LUT_NUM		128
-#define COGGING_MAP_NUM		3000
+#define OFFSET_LUT_NUM		128U
+#define COGGING_MAP_NUM		5000U
 
 typedef enum {
-	CONTROL_MODE_CURRENT		= 0,
-	CONTROL_MODE_CURRENT_RAMP	= 1,
-	CONTROL_MODE_VELOCITY		= 2,
-	CONTROL_MODE_VELOCITY_RAMP	= 3,
-	CONTROL_MODE_POSITION		= 4,
-	CONTROL_MODE_POSITION_TRAP	= 5,
-} tControlMode;
+    CAN_BAUDRATE_250K = 0,
+    CAN_BAUDRATE_500K,
+    CAN_BAUDRATE_800K,
+    CAN_BAUDRATE_1000K,
+} tCanBaudrate;
 
 typedef struct sUsrConfig{
 	// Motor
-	int motor_pole_pairs;			// (Auto)
-	float motor_phase_resistance;	// (Auto)
-	float motor_phase_inductance;	// (Auto)
-	float inertia;					// [A/(turn/s^2)]
+	int32_t invert_motor_dir;       // 0 False : 1 True
+	float inertia;					// [A/(turn/s^2)]       (0~100)
+	float torque_constant;			// [Nm/A]               (0~10)
+	int32_t motor_pole_pairs;		// [PP]                 (2~30)
+	float motor_phase_resistance;	// [R]                  (0~10)
+	float motor_phase_inductance;	// [H]                  (0~10)
+    float current_limit;			// [A]                  (0~45)
+	float velocity_limit;			// [turn/s]             (0~100)
 	
-	// Encoder
-	int encoder_dir;				// (Auto)
-	int encoder_offset;				// (Auto)
-	int offset_lut[OFFSET_LUT_NUM];	// (Auto)
+	// Calibration
+	float calib_current;      		// [A]                  (0~45)
+    float calib_voltage;  			// [V]                  (0~50)
 	
-	// Calib
-	int calib_valid;				// (Auto)
-	float calib_current;			// [A]
-	float calib_max_voltage;		// [V]
-	
-	// Anticogging
-	int anticogging_enable;
-	float anticogging_pos_threshold;
-	float anticogging_vel_threshold;
-	
-	// Control
-	int control_mode;
-	float current_ramp_rate;		// [A/sec]
-	float vel_ramp_rate;			// [(turn/s)/s]
-	float traj_vel;					// [turn/s]
-	float traj_accel;				// [(turn/s)/s]
-	float traj_decel;				// [(turn/s)/s]
-	float pos_gain;					// [(turn/s)/turn]
-	float vel_gain;					// [A/(turn/s)]
-	float vel_integrator_gain;		// [A/((turn/s)*s)]
-	float vel_limit;				// [turn/s]
-	float current_limit;			// [A]
-	float current_ctrl_p_gain;		// (Auto)
-	float current_ctrl_i_gain;		// (Auto)
-	int current_ctrl_bandwidth; 	// [rad/s] Current loop bandwidth 100~2000
+	// Controller
+	int32_t control_mode;
+    float pos_gain;                 //                      (0~1000)
+	float vel_gain;                 //                      (0~1000)
+	float vel_integrator_gain;      //                      (0~1000)
+	float current_ctrl_bw; 			//                      (2~5000)
+    int32_t anticogging_enable;     // 0 False : 1 True
+    int32_t sync_target_enable;		// 0 False : 1 True
+    float target_velcity_window;	// [turn/s]             (0~100)
+	float target_position_window;	// [turn]               (0~100)
+	float torque_ramp_rate;			// [Nm/s]               (0~100)
+	float velocity_ramp_rate;		// [(turn/s)/s]         (0~1000)
+	float position_filter_bw;       //                      (2~5000)
+	float profile_velocity;			// [turn/s]             (0~100)
+	float profile_accel;			// [(turn/s)/s]         (0~1000)
+	float profile_decel;			// [(turn/s)/s]         (0~1000)
 	
 	// Protect
-	float protect_under_voltage;	// [V]
-	float protect_over_voltage;		// [V]
-	float protect_over_speed;		// [turn/s]
+	float protect_under_voltage;	// [V]                  (0~50)
+	float protect_over_voltage;		// [V]                  (0~50)
+	float protect_over_current;		// [A]                  (0~45)
+    float protect_i_bus_max;        // [A]                  (0~10)
+    float protect_i_leak_max;       // [A]                  (0~50)
 	
 	// CAN
-	int can_id;						// CAN bus ID
-	int can_timeout_ms;				// CAN bus timeout in ms : 0 Disable
-	int can_sync_target_enable;		// 0 Disable : 1 Enable
+	int32_t node_id;                //                      (1~31)
+    int32_t can_baudrate;           // REF: tCanBaudrate
+    int32_t heartbeat_consumer_ms;  // rx heartbeat timeout in ms : 0 Disable       (0~600000)
+    int32_t heartbeat_producer_ms;  // tx heartbeat interval in ms : 0 Disable      (0~600000)
 	
+	// Encoder
+	int32_t calib_valid;				// (Auto)
+	int32_t encoder_dir;				// (Auto)
+	int32_t encoder_offset;				// (Auto)
+	int32_t offset_lut[OFFSET_LUT_NUM];	// (Auto)
+
 	uint32_t crc;
 } tUsrConfig;
 
 typedef struct sCoggingMap{
-	float map[COGGING_MAP_NUM];
-	
+	int16_t map[COGGING_MAP_NUM];
 	uint32_t crc;
 } tCoggingMap;
 
@@ -96,9 +95,12 @@ extern tUsrConfig UsrConfig;
 extern tCoggingMap *pCoggingMap;
 
 void USR_CONFIG_set_default_config(void);
-void USR_CONFIG_set_default_cogging_map(void);
+int USR_CONFIG_erease_config(void);
 int USR_CONFIG_read_config(void);
 int USR_CONFIG_save_config(void);
+
+void USR_CONFIG_set_default_cogging_map(void);
+int USR_CONFIG_erease_cogging_map(void);
 int USR_CONFIG_read_cogging_map(void);
 int USR_CONFIG_save_cogging_map(void);
 
