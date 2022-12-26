@@ -49,6 +49,7 @@ typedef enum eCalibStep{
 	CS_REPORT_OFFSET_LUT,
 }tCalibStep;
 
+#define MAX_MOTOR_POLE_PAIRS    30U
 #define SAMPLES_PER_PPAIR 		128U
 
 static int *p_error_arr = NULL;
@@ -65,7 +66,7 @@ void CALIBRATION_start(void)
     
 	// malloc
 	if(p_error_arr == NULL){
-		p_error_arr = HEAP_malloc(SAMPLES_PER_PPAIR*UsrConfig.motor_pole_pairs*sizeof(int));
+		p_error_arr = HEAP_malloc(SAMPLES_PER_PPAIR*MAX_MOTOR_POLE_PAIRS*sizeof(int));
 	}
 	
 	UsrConfig.encoder_dir = +1;

@@ -29,14 +29,14 @@ void USR_CONFIG_set_default_config(void)
 	UsrConfig.invert_motor_dir = 0;
 	UsrConfig.inertia = 0.0001f;
 	UsrConfig.torque_constant = 0.0612f;
-	UsrConfig.motor_pole_pairs = 4;
+	UsrConfig.motor_pole_pairs = 7;
 	UsrConfig.motor_phase_resistance = 0.59f;
 	UsrConfig.motor_phase_inductance = 0.000320f;
     UsrConfig.current_limit = 10;
 	UsrConfig.velocity_limit = 60;
 	
 	// Encoder
-    UsrConfig.calib_current = 5.0f;
+    UsrConfig.calib_current = 8.0f;
 	UsrConfig.calib_voltage = 3.0f;
     
     // Anticogging
@@ -44,9 +44,9 @@ void USR_CONFIG_set_default_config(void)
 	
 	// Controller
 	UsrConfig.control_mode = CONTROL_MODE_POSITION_PROFILE;
-    UsrConfig.pos_gain = 80.0f;
-	UsrConfig.vel_gain = 0.02f;
-	UsrConfig.vel_integrator_gain = 0.04f;
+    UsrConfig.pos_gain = 160.0f;
+	UsrConfig.vel_gain = 0.05f;
+	UsrConfig.vel_integrator_gain = 0.02f;
 	UsrConfig.current_ctrl_bw = 1000;
     UsrConfig.sync_target_enable = 0;
     UsrConfig.target_velcity_window = 0.5f;
@@ -55,15 +55,15 @@ void USR_CONFIG_set_default_config(void)
 	UsrConfig.velocity_ramp_rate = 100.0f;
 	UsrConfig.position_filter_bw = 2;
 	UsrConfig.profile_velocity = 30;
-	UsrConfig.profile_accel = 100;
-	UsrConfig.profile_decel = 100;
+	UsrConfig.profile_accel = 50;
+	UsrConfig.profile_decel = 50;
 
 	// Protect
 	UsrConfig.protect_under_voltage = 12;
-	UsrConfig.protect_over_voltage  = 28;
+	UsrConfig.protect_over_voltage  = 30;
 	UsrConfig.protect_over_current = 20;
-    UsrConfig.protect_i_bus_max = 2;
-    UsrConfig.protect_i_leak_max = 5.0f;
+    UsrConfig.protect_i_bus_max = 5;
+    UsrConfig.protect_i_leak_max = 10.0f;
 	
 	// CAN
 	UsrConfig.node_id = 1;

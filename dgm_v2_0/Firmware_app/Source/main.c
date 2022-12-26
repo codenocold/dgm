@@ -514,7 +514,7 @@ void Error_Handler(void)
 	/* Main PWM Output Disable */
 	timer_primary_output_config(TIMER0, DISABLE);
 	
-	while(1){}
+	while(1){watch_dog_feed();}
 }
 
 void delay_ms(const uint16_t ms)
