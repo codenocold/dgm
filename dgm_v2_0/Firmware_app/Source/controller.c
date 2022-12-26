@@ -1,17 +1,17 @@
 /*
-	Copyright 2021 codenocold codenocold@qq.com
-	Address : https://github.com/codenocold/dgm
-	This file is part of the dgm firmware.
-	The dgm firmware is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-	The dgm firmware is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Copyright 2021 codenocold codenocold@qq.com
+    Address : https://github.com/codenocold/dgm
+    This file is part of the dgm firmware.
+    The dgm firmware is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    The dgm firmware is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "controller.h"
@@ -53,31 +53,31 @@ int CONTROLLER_set_home(void)
 
 void CONTROLLER_sync_callback(void)
 {
-	if(MCT_get_state() != RUN){
-		return;
-	}
+    if(MCT_get_state() != RUN){
+        return;
+    }
     
-	switch(UsrConfig.control_mode){
-		case CONTROL_MODE_TORQUE_RAMP:
-			Controller.input_torque = Controller.input_torque_buffer;
-			break;
-		
-		case CONTROL_MODE_VELOCITY_RAMP:
-			Controller.input_velocity = Controller.input_velocity_buffer;
-			break;
-		
-		case CONTROL_MODE_POSITION_FILTER:
-			Controller.input_position = Controller.input_position_buffer;
-			break;
+    switch(UsrConfig.control_mode){
+        case CONTROL_MODE_TORQUE_RAMP:
+            Controller.input_torque = Controller.input_torque_buffer;
+            break;
+        
+        case CONTROL_MODE_VELOCITY_RAMP:
+            Controller.input_velocity = Controller.input_velocity_buffer;
+            break;
+        
+        case CONTROL_MODE_POSITION_FILTER:
+            Controller.input_position = Controller.input_position_buffer;
+            break;
         
         case CONTROL_MODE_POSITION_PROFILE:
             Controller.input_position = Controller.input_position_buffer;
             Controller.input_updated = true;
             break;
-		
-		default:
-			break;
-	}
+        
+        default:
+            break;
+    }
     
     StatuswordNew.status.target_reached = 0;
     StatuswordOld.status.target_reached = 0;
@@ -85,12 +85,12 @@ void CONTROLLER_sync_callback(void)
 
 void CONTROLLER_init(void)
 {
-	CONTROLLER_update_input_pos_filter_gain(UsrConfig.position_filter_bw);
+    CONTROLLER_update_input_pos_filter_gain(UsrConfig.position_filter_bw);
 }
 
 void CONTROLLER_update_input_pos_filter_gain(float bw)
 {
-	float bandwidth = MIN(bw, 0.25f * PWM_FREQUENCY);
+    float bandwidth = MIN(bw, 0.25f * PWM_FREQUENCY);
     Controller.input_pos_filter_ki = 2.0f * bandwidth;
     Controller.input_pos_filter_kp = 0.25f * SQ(Controller.input_pos_filter_ki);
 }
@@ -124,10 +124,10 @@ void CONTROLLER_reset(void)
 void CONTROLLER_loop(void)
 {
     float vel_des;
-	const float pos_meas = Encoder.pos;
-	const float vel_meas = Encoder.vel;
-	const float phase_meas = Encoder.phase;
-	const float phase_vel_meas = Encoder.phase_vel;
+    const float pos_meas = Encoder.pos;
+    const float vel_meas = Encoder.vel;
+    const float phase_meas = Encoder.phase;
+    const float phase_vel_meas = Encoder.phase_vel;
     
     if(MCT_get_state() == RUN){
         switch (UsrConfig.control_mode) {
@@ -159,11 +159,11 @@ void CONTROLLER_loop(void)
             case CONTROL_MODE_POSITION_FILTER: {
                 // 2nd order pos tracking filter
                 float delta_pos = Controller.input_position - Controller.pos_setpoint;
-                float delta_vel = Controller.input_velocity - Controller.vel_setpoint;								    // Vel error
-                float accel = Controller.input_pos_filter_kp * delta_pos + Controller.input_pos_filter_ki * delta_vel;	// Feedback
-                Controller.torque_setpoint = accel * UsrConfig.inertia;												    // Accel
-                Controller.vel_setpoint += CURRENT_MEASURE_PERIOD * accel;																    // Delta vel
-                Controller.pos_setpoint += CURRENT_MEASURE_PERIOD * Controller.vel_setpoint;											    // Delta pos
+                float delta_vel = Controller.input_velocity - Controller.vel_setpoint;                                    // Vel error
+                float accel = Controller.input_pos_filter_kp * delta_pos + Controller.input_pos_filter_ki * delta_vel;    // Feedback
+                Controller.torque_setpoint = accel * UsrConfig.inertia;                                                    // Accel
+                Controller.vel_setpoint += CURRENT_MEASURE_PERIOD * accel;                                                                    // Delta vel
+                Controller.pos_setpoint += CURRENT_MEASURE_PERIOD * Controller.vel_setpoint;                                                // Delta pos
             } break;
 
             // Position profile
@@ -172,9 +172,9 @@ void CONTROLLER_loop(void)
                     Controller.input_updated = false;
                     
                     TRAJ_plan(Controller.input_position, Controller.pos_setpoint, Controller.vel_setpoint,
-                                     UsrConfig.profile_velocity,	// Velocity
-                                     UsrConfig.profile_accel,		// Acceleration
-                                     UsrConfig.profile_decel);		// Deceleration
+                                     UsrConfig.profile_velocity,    // Velocity
+                                     UsrConfig.profile_accel,        // Acceleration
+                                     UsrConfig.profile_decel);        // Deceleration
                 }
 
                 if(Traj.profile_done){
@@ -212,25 +212,25 @@ void CONTROLLER_loop(void)
     }
 
     // Velocity limiting
-	vel_des = CLAMP(vel_des, -UsrConfig.velocity_limit, +UsrConfig.velocity_limit);
+    vel_des = CLAMP(vel_des, -UsrConfig.velocity_limit, +UsrConfig.velocity_limit);
 
-	// Velocity control
+    // Velocity control
     float torque = Controller.torque_setpoint;
 
     float v_err = 0.0f;
     if(UsrConfig.control_mode >= CONTROL_MODE_VELOCITY_RAMP){
         v_err = vel_des - vel_meas;
         torque += UsrConfig.vel_gain * v_err;
-		
+        
         // Velocity integral action before limiting
         torque += Controller.vel_integrator_torque;
     }
 
     // Velocity limiting in torque mode
     if (UsrConfig.control_mode < CONTROL_MODE_VELOCITY_RAMP) {
-		float Tmax = (+UsrConfig.velocity_limit - vel_meas) * UsrConfig.vel_gain;
-		float Tmin = (-UsrConfig.velocity_limit - vel_meas) * UsrConfig.vel_gain;
-		torque = CLAMP(torque, Tmin, Tmax);
+        float Tmax = (+UsrConfig.velocity_limit - vel_meas) * UsrConfig.vel_gain;
+        float Tmin = (-UsrConfig.velocity_limit - vel_meas) * UsrConfig.vel_gain;
+        torque = CLAMP(torque, Tmin, Tmax);
     }
     
     // Anticogging
@@ -273,7 +273,7 @@ void CONTROLLER_loop(void)
             Controller.vel_integrator_torque += (UsrConfig.vel_integrator_gain * CURRENT_MEASURE_PERIOD) * v_err;
         }
     }
-	
-	float iq_set = torque / UsrConfig.torque_constant;
-	FOC_current(0, iq_set, phase_meas, phase_vel_meas);
+    
+    float iq_set = torque / UsrConfig.torque_constant;
+    FOC_current(0, iq_set, phase_meas, phase_vel_meas);
 }
