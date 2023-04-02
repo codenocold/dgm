@@ -37,12 +37,12 @@ void ENCODER_init(void)
     Encoder.phase_vel = 0;
     
     Encoder.interpolation = 0;
-    Encoder.snap_threshold = 0.5f * CURRENT_MEASURE_PERIOD * Encoder.pll_ki;
-
+    
     int encoder_pll_bw = 2000;
     float bandwidth = MIN(encoder_pll_bw, 0.25f * PWM_FREQUENCY);
     Encoder.pll_kp = 2.0f * bandwidth;                  // basic conversion to discrete time
     Encoder.pll_ki = 0.25f * SQ(Encoder.pll_kp);         // Critically damped
+    Encoder.snap_threshold = 0.5f * CURRENT_MEASURE_PERIOD * Encoder.pll_ki;
 }
 
 bool ENCODER_sample(void)
