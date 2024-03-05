@@ -177,6 +177,7 @@
 ![](./img/dgm_tool_dfu_en.png)
 
 # dgm 驱动板购买链接
+[dgm tool 下载链接]([https://item.taobao.com/item.htm?ft=t&id=645970525370](https://drive.google.com/file/d/1S3wjEvR2HZi_IdNeigkD4LH7BEKu9krl/view?usp=drive_link)https://drive.google.com/file/d/1S3wjEvR2HZi_IdNeigkD4LH7BEKu9krl/view?usp=drive_link)
 
 - **暴风电子@taobao：**[购买链接](https://item.taobao.com/item.htm?ft=t&id=645970525370)
 
