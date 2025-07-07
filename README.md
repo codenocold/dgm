@@ -2,15 +2,14 @@
 
 ## 仓库文件结构
 
-- [Firmware_app](https://github.com/codenocold/dgm/tree/main/Firmware_app)：dgm驱动器固件源码
-- [Firmware_boot](https://github.com/codenocold/dgm/tree/main/Firmware_boot)：dgm驱动器boot源码
+- [Firmware](https://github.com/codenocold/dgm/tree/main/Firmware)：dgm驱动器固件源码
 - [Hardware](https://github.com/codenocold/dgm/tree/main/Hardware)：电路原理图，3D模型文件
 - [dgm_tool](https://github.com/codenocold/dgm/tree/main/dgm_tool)：dgm_tool 可视化调试软件
-- [dgm电机驱动器用户手册.pdf](https://github.com/codenocold/dgm/blob/main/dgm%E7%94%B5%E6%9C%BA%E9%A9%B1%E5%8A%A8%E5%99%A8%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8C.pdf)：用户使用手册
+- [dgm驱动器用户手册.pdf](https://github.com/codenocold/dgm/blob/main/dgm%E9%A9%B1%E5%8A%A8%E5%99%A8%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8C.pdf)：用户使用手册
 
 **![](img/head_show.jpg)**
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/control_loop.png)
+![](img/control_loop.png)
 
 ## 主要特点
 
@@ -47,7 +46,7 @@
 
 ## 端口和机械尺寸
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/port_mech.jpg)
+![](img/port_mech.jpg)
 
 - **J1 供电和CAN通讯**
 - **J2 三相无刷电机**
@@ -56,11 +55,11 @@
 
 ## 安装示意
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/dgm_mount.jpg)
+![](img/dgm_mount.jpg)
 
 ## 安装规范
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/mag_install.jpg)
+![](img/mag_install.jpg)
 
 ## 使用 dgm tool 调试
 
@@ -68,39 +67,39 @@
 
 **dgm tool 适用于 Windows8 及以上64位版本操作系统，双击 dgm_tool 文件夹下的 dgm_tool_x64-X.X.exe运行即可。**
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/dgm_con_final.jpg)
+![](img/dgm_con_final.jpg)
 
 ## 调试界面
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/dgm_tool_debug.jpg)
+![](img/dgm_tool_debug.jpg)
 
 ## 校准界面
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/dgm_tool_calib.jpg)
+![](img/dgm_tool_calib.jpg)
 
 ## 参数配置界面
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/dgm_tool_config.jpg)
+![](img/dgm_tool_config.jpg)
 
 ## 固件升级界面
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/dgm_tool_dfu.jpg)
+![](img/dgm_tool_dfu.jpg)
 
 ## keil mdk 固件源代码
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/keil.jpg)
+![](img/keil.jpg)
 
 ## dgm 驱动板原理图
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/sch.png)
+![](img/sch.png)
 
 ## dmg 驱动器用户手册
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/doc.png)
+![](img/doc.png)
 
 ## 配套电机参数
 
-![](E:/gitrepo/dgm/doc/淘宝/详情页/img/motor.jpg)
+![](img/motor.jpg)
 
 | 额定电压     | 24V         |
 | ------------ | ----------- |
